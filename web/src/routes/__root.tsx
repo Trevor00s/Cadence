@@ -4,11 +4,8 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
-  HeadContent,
-  Scripts,
 } from "@tanstack/react-router";
 
-import appCss from "../styles.css?url";
 import { Web3Providers } from "@/components/cadence/Providers";
 import { Nav, Footer } from "@/components/cadence/Nav";
 
@@ -74,46 +71,10 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  head: () => ({
-    meta: [
-      { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Cadence. Recurring USDC subscriptions on Arc." },
-      {
-        name: "description",
-        content:
-          "Open protocol for recurring USDC subscriptions on Arc. Permit2 authorization, no custody, no API keys, cancellable in one transaction.",
-      },
-      { property: "og:title", content: "Cadence. Recurring USDC subscriptions on Arc." },
-      {
-        property: "og:description",
-        content:
-          "One Permit2 signature. A public contract pulls payment on cadence. No custody, no API keys.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-    ],
-    links: [{ rel: "stylesheet", href: appCss }],
-  }),
-  shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
   errorComponent: ErrorComponent,
 });
-
-function RootShell({ children }: { children: React.ReactNode }) {
-  return (
-    <html lang="en">
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        {children}
-        <Scripts />
-      </body>
-    </html>
-  );
-}
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
