@@ -1,0 +1,30 @@
+node_modules/
+.yarn/cache
+.yarn/install-state.gz
+.pnp.*
+
+dist/
+.next/
+.turbo/
+out/
+.env
+.env.local
+.env.*.local
+
+# Foundry
+contracts/cache/
+contracts/out/
+contracts/broadcast/
+contracts/lib/
+
+# OS
+.DS_Store
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# IDE
+.vscode/
+.idea/

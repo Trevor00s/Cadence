@@ -1,0 +1,19 @@
+{
+  "name": "cadence",
+  "private": true,
+  "version": "0.0.0",
+  "packageManager": "yarn@4.5.0",
+  "workspaces": [
+    "packages/*",
+    "web",
+    "keeper"
+  ],
+  "scripts": {
+    "build:contracts": "cd contracts && forge build",
+    "test:contracts": "cd contracts && forge test -vvv",
+    "build:sdk": "yarn workspace @cadence/sdk build",
+    "dev:web": "yarn workspace web dev",
+    "dev:keeper": "yarn workspace keeper dev",
+    "typecheck": "yarn workspaces foreach -A --exclude cadence run typecheck"
+  }
+}
