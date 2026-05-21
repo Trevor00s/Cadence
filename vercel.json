@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "installCommand": "corepack enable && corepack prepare yarn@4.5.0 --activate && yarn install --immutable",
-  "buildCommand": "yarn workspace web build",
+  "installCommand": "npx -y yarn@4.5.0 install --immutable",
+  "buildCommand": "npx -y yarn@4.5.0 workspace web build",
   "outputDirectory": "web/dist",
   "framework": null,
   "rewrites": [
