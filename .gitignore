@@ -28,3 +28,7 @@ pnpm-debug.log*
 # IDE
 .vscode/
 .idea/
+
+# Local agent config (private)
+CLAUDE.md
+.claude/
