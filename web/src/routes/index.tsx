@@ -206,6 +206,149 @@ function MetricsBoard() {
   );
 }
 
+function ReceiptCard() {
+  return (
+    <div
+      className="relative bg-card border border-rule rounded-md p-7 shadow-[0_1px_2px_rgba(0,0,0,0.03),0_8px_30px_rgba(0,0,0,0.04)]"
+      style={{ fontFeatureSettings: '"tnum"' }}
+    >
+      {/* Top label row */}
+      <div className="flex items-center justify-between text-[11px] font-mono text-muted-foreground">
+        <span className="uppercase tracking-[0.08em] font-600">
+          subscription · sub_0009
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="inline-block h-1.5 w-1.5 rounded-full bg-[color:var(--accent-ink)]" />
+          active
+        </span>
+      </div>
+
+      {/* Plan summary */}
+      <div className="mt-5">
+        <div className="text-[12px] font-mono text-muted-foreground">
+          Acme Pro Tier
+        </div>
+        <div className="mt-1 flex items-baseline gap-2 tabular">
+          <span className="text-[34px] font-700 tracking-[-0.02em]">10.00</span>
+          <span className="text-[14px] text-muted-foreground">USDC</span>
+          <span className="text-[13px] text-muted-foreground">
+            every 30 days
+          </span>
+        </div>
+      </div>
+
+      <div className="hairline mt-6 mb-5" />
+
+      {/* Lifecycle entries */}
+      <div className="space-y-5">
+        <ReceiptStep
+          state="done"
+          n="01"
+          title="Permit2 authorized"
+          desc="One EIP-712 signature. Allowance lives onchain."
+          right="tx · 0x4f...91c"
+        />
+        <ReceiptStep
+          state="done"
+          n="02"
+          title="Charged · 10.00 USDC"
+          desc={
+            <span className="tabular">
+              merchant <b className="text-foreground">9.90</b>
+              {" · "}keeper <b className="text-foreground">0.05</b>
+              {" · "}fee <b className="text-foreground">0.05</b>
+            </span>
+          }
+          right="block · 18,402"
+        />
+        <ReceiptStep
+          state="pending"
+          n="03"
+          title="Next charge in 28 days"
+          desc="Permissionless keeper will trigger when due."
+          right="anyone can call"
+        />
+      </div>
+
+      <div className="hairline mt-6 mb-4" />
+
+      {/* Footer */}
+      <div className="flex items-center justify-between text-[12px] text-muted-foreground">
+        <span>Cancellable any time onchain.</span>
+        <span className="font-mono">cancel()</span>
+      </div>
+
+      {/* Corner perforation effect (decorative) */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute -top-2 left-6 right-6 h-2"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at 6px 0, var(--background) 3px, transparent 4px)",
+          backgroundSize: "12px 100%",
+          backgroundRepeat: "repeat-x",
+        }}
+      />
+      <span
+        aria-hidden
+        className="pointer-events-none absolute -bottom-2 left-6 right-6 h-2"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at 6px 8px, var(--background) 3px, transparent 4px)",
+          backgroundSize: "12px 100%",
+          backgroundRepeat: "repeat-x",
+        }}
+      />
+    </div>
+  );
+}
+
+function ReceiptStep({
+  state,
+  n,
+  title,
+  desc,
+  right,
+}: {
+  state: "done" | "pending";
+  n: string;
+  title: string;
+  desc: React.ReactNode;
+  right?: string;
+}) {
+  return (
+    <div className="grid grid-cols-[20px_1fr] gap-3">
+      <div className="pt-0.5">
+        {state === "done" ? (
+          <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-[color:var(--accent-ink)] text-[10px] font-700 text-[var(--paper)]">
+            ✓
+          </span>
+        ) : (
+          <span className="inline-block h-4 w-4 rounded-full border border-foreground/40" />
+        )}
+      </div>
+      <div>
+        <div className="flex items-baseline justify-between gap-3">
+          <div className="flex items-baseline gap-2.5">
+            <span className="font-mono text-[10px] text-muted-foreground">
+              {n}
+            </span>
+            <span className="text-[14px] font-600">{title}</span>
+          </div>
+          {right && (
+            <span className="font-mono text-[10.5px] text-muted-foreground whitespace-nowrap">
+              {right}
+            </span>
+          )}
+        </div>
+        <div className="mt-1 text-[12.5px] text-muted-foreground leading-relaxed">
+          {desc}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function FlowDiagram() {
   return (
     <section className="hairline-b hairline">
@@ -602,48 +745,52 @@ function Landing() {
     <div>
       {/* Hero */}
       <section className="mx-auto max-w-6xl px-4 sm:px-6 pt-16 pb-20">
-        <div className="max-w-[760px]">
-          <Pill>Arc Testnet, chain 5042002</Pill>
-          <h1 className="mt-5 text-[44px] sm:text-[60px] leading-[1.02] tracking-[-0.025em] font-800">
-            Recurring USDC subscriptions on Arc.
-          </h1>
-          <p className="mt-5 text-[17px] leading-[1.55] text-muted-foreground">
-            One Permit2 signature from your customer. A public contract pulls
-            payment on cadence. No custody, no API keys, no merchant
-            onboarding. Cancellable in one transaction.
-          </p>
-          <div className="mt-7 flex flex-wrap gap-3">
-            <Link
-              to="/merchant"
-              className="rounded-md bg-primary px-4 py-2.5 text-[14px] font-600 text-primary-foreground hover:opacity-90"
-            >
-              For merchants
-            </Link>
-            <Link
-              to="/subscribe"
-              className="rounded-md border border-foreground px-4 py-2.5 text-[14px] font-600 hover:bg-muted"
-            >
-              For customers
-            </Link>
-            <Link
-              to="/docs"
-              className="rounded-md px-4 py-2.5 text-[14px] font-600 text-muted-foreground hover:text-foreground"
-            >
-              Read the docs →
-            </Link>
+        <div className="grid lg:grid-cols-[1fr_460px] gap-12 lg:gap-16 items-start">
+          <div className="max-w-[640px]">
+            <Pill>Arc Testnet, chain 5042002</Pill>
+            <h1 className="mt-5 text-[44px] sm:text-[60px] leading-[1.02] tracking-[-0.025em] font-800">
+              Recurring USDC subscriptions on Arc.
+            </h1>
+            <p className="mt-5 text-[17px] leading-[1.55] text-muted-foreground">
+              One Permit2 signature from your customer. A public contract pulls
+              payment on cadence. No custody, no API keys, no merchant
+              onboarding. Cancellable in one transaction.
+            </p>
+            <div className="mt-7 flex flex-wrap gap-3">
+              <Link
+                to="/merchant"
+                className="rounded-md bg-primary px-4 py-2.5 text-[14px] font-600 text-primary-foreground hover:opacity-90"
+              >
+                For merchants
+              </Link>
+              <Link
+                to="/subscribe"
+                className="rounded-md border border-foreground px-4 py-2.5 text-[14px] font-600 hover:bg-muted"
+              >
+                For customers
+              </Link>
+              <Link
+                to="/docs"
+                className="rounded-md px-4 py-2.5 text-[14px] font-600 text-muted-foreground hover:text-foreground"
+              >
+                Read the docs →
+              </Link>
+            </div>
+            <LiveState />
+            <div className="mt-6 flex items-center gap-2 text-[12px] text-muted-foreground">
+              <span className="font-mono">manager</span>
+              <a
+                href={`${ARC_TESTNET.explorer}/address/${ARC_TESTNET.subscriptionManager}`}
+                target="_blank"
+                rel="noreferrer"
+                className="font-mono hover:text-[color:var(--accent-ink)] break-all"
+              >
+                {ARC_TESTNET.subscriptionManager}
+              </a>
+            </div>
           </div>
-          <LiveState />
-          <div className="mt-6 flex items-center gap-2 text-[12px] text-muted-foreground">
-            <span className="font-mono">manager</span>
-            <a
-              href={`${ARC_TESTNET.explorer}/address/${ARC_TESTNET.subscriptionManager}`}
-              target="_blank"
-              rel="noreferrer"
-              className="font-mono hover:text-[color:var(--accent-ink)] break-all"
-            >
-              {ARC_TESTNET.subscriptionManager}
-            </a>
-          </div>
+
+          <ReceiptCard />
         </div>
       </section>
 
