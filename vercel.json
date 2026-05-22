@@ -1,8 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "installCommand": "node .yarn/releases/yarn-4.5.0.cjs install --immutable",
-  "buildCommand": "node .yarn/releases/yarn-4.5.0.cjs workspace web build",
-  "outputDirectory": "web/dist",
+  "installCommand": "cd .. && node .yarn/releases/yarn-4.5.0.cjs install --immutable",
+  "buildCommand": "cd .. && node .yarn/releases/yarn-4.5.0.cjs workspace web build",
+  "outputDirectory": "dist",
   "framework": null,
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
