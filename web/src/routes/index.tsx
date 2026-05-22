@@ -26,18 +26,32 @@ function Pill({ children }: { children: React.ReactNode }) {
   );
 }
 
+const ERC20_BALANCE_ABI = [
+  {
+    type: "function",
+    name: "balanceOf",
+    stateMutability: "view",
+    inputs: [{ name: "a", type: "address" }],
+    outputs: [{ type: "uint256" }],
+  },
+] as const;
+
+interface LiveData {
+  plans: bigint;
+  subs: bigint;
+  feesCollected: bigint;
+}
+
 function LiveState() {
   const publicClient = usePublicClient();
-  const [counts, setCounts] = useState<{ plans: bigint; subs: bigint } | null>(
-    null,
-  );
+  const [data, setData] = useState<LiveData | null>(null);
 
   useEffect(() => {
     if (!publicClient) return;
     let cancelled = false;
     (async () => {
       try {
-        const [plans, subs] = await Promise.all([
+        const [plans, subs, feesCollected] = await Promise.all([
           publicClient.readContract({
             address: ARC_TESTNET.subscriptionManager,
             abi: subscriptionManagerAbi,
@@ -48,10 +62,16 @@ function LiveState() {
             abi: subscriptionManagerAbi,
             functionName: "nextSubId",
           }) as Promise<bigint>,
+          publicClient.readContract({
+            address: ARC_TESTNET.usdc,
+            abi: ERC20_BALANCE_ABI,
+            functionName: "balanceOf",
+            args: [ARC_TESTNET.protocolFeeRecipient],
+          }) as Promise<bigint>,
         ]);
-        if (!cancelled) setCounts({ plans, subs });
+        if (!cancelled) setData({ plans, subs, feesCollected });
       } catch {
-        if (!cancelled) setCounts(null);
+        if (!cancelled) setData(null);
       }
     })();
     return () => {
@@ -68,18 +88,488 @@ function LiveState() {
       <span className="text-rule">|</span>
       <span>
         <span className="text-foreground tabular">
-          {counts ? counts.plans.toString() : "."}
+          {data ? data.plans.toString() : "."}
         </span>{" "}
         plans
       </span>
       <span className="text-rule">|</span>
       <span>
         <span className="text-foreground tabular">
-          {counts ? counts.subs.toString() : "."}
+          {data ? data.subs.toString() : "."}
         </span>{" "}
-        subscriptions
+        subs
       </span>
     </div>
+  );
+}
+
+function MetricsBoard() {
+  const publicClient = usePublicClient();
+  const [data, setData] = useState<LiveData | null>(null);
+
+  useEffect(() => {
+    if (!publicClient) return;
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const [plans, subs, feesCollected] = await Promise.all([
+          publicClient.readContract({
+            address: ARC_TESTNET.subscriptionManager,
+            abi: subscriptionManagerAbi,
+            functionName: "nextPlanId",
+          }) as Promise<bigint>,
+          publicClient.readContract({
+            address: ARC_TESTNET.subscriptionManager,
+            abi: subscriptionManagerAbi,
+            functionName: "nextSubId",
+          }) as Promise<bigint>,
+          publicClient.readContract({
+            address: ARC_TESTNET.usdc,
+            abi: ERC20_BALANCE_ABI,
+            functionName: "balanceOf",
+            args: [ARC_TESTNET.protocolFeeRecipient],
+          }) as Promise<bigint>,
+        ]);
+        if (!cancelled) setData({ plans, subs, feesCollected });
+      } catch {
+        if (!cancelled) setData(null);
+      }
+    };
+    void load();
+    const id = setInterval(load, 12_000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [publicClient]);
+
+  const usdcFromBig = (v: bigint) => {
+    const n = Number(v) / 1_000_000;
+    return n < 1
+      ? n.toFixed(2)
+      : n.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  };
+  // Total settled volume can be inferred from fees / 0.005 since fee is 50bps.
+  const totalSettled = data
+    ? usdcFromBig((data.feesCollected * 10_000n) / 50n)
+    : null;
+
+  const metrics = [
+    { k: "Plans created", v: data ? data.plans.toString() : "." },
+    { k: "Subscriptions", v: data ? data.subs.toString() : "." },
+    {
+      k: "Total settled",
+      v: totalSettled ? totalSettled + " USDC" : ".",
+    },
+    {
+      k: "Protocol fees",
+      v: data ? usdcFromBig(data.feesCollected) + " USDC" : ".",
+    },
+  ];
+
+  return (
+    <section className="hairline-b">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 py-10">
+        <div className="flex items-baseline justify-between mb-6">
+          <div className="text-[11px] font-600 uppercase tracking-[0.08em] text-muted-foreground">
+            Live on Arc Testnet
+          </div>
+          <a
+            href={`${ARC_TESTNET.explorer}/address/${ARC_TESTNET.subscriptionManager}`}
+            target="_blank"
+            rel="noreferrer"
+            className="text-[12px] font-mono text-muted-foreground hover:text-[color:var(--accent-ink)]"
+          >
+            view contract →
+          </a>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4">
+          {metrics.map((m, i) => (
+            <div
+              key={m.k}
+              className={
+                "py-4 px-0 md:px-6 " +
+                (i > 0 ? "md:border-l border-rule" : "")
+              }
+            >
+              <div className="text-[11px] font-600 uppercase tracking-[0.08em] text-muted-foreground">
+                {m.k}
+              </div>
+              <div className="mt-2 text-[28px] font-700 tracking-[-0.02em] tabular">
+                {m.v}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function FlowDiagram() {
+  return (
+    <section className="hairline-b hairline">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 py-20 grid md:grid-cols-[1fr_2fr] gap-10">
+        <div>
+          <Pill>Architecture</Pill>
+          <h2 className="mt-4 text-[32px] leading-tight tracking-[-0.02em] font-700">
+            One signature. Four ledger entries.
+          </h2>
+          <p className="mt-4 text-[14px] text-muted-foreground leading-relaxed">
+            Each charge is a single Permit2 transferFrom that splits into three
+            payments at the contract level. No off-chain routing, no batching
+            risk.
+          </p>
+        </div>
+        <div className="border border-rule rounded-md bg-card p-6 md:p-10">
+          <svg
+            viewBox="0 0 720 340"
+            className="w-full h-auto"
+            style={{ fontFamily: "var(--font-mono)" }}
+          >
+            <defs>
+              <marker
+                id="arrow"
+                viewBox="0 0 10 10"
+                refX="9"
+                refY="5"
+                markerWidth="6"
+                markerHeight="6"
+                orient="auto-start-reverse"
+              >
+                <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
+              </marker>
+              <marker
+                id="arrowAccent"
+                viewBox="0 0 10 10"
+                refX="9"
+                refY="5"
+                markerWidth="6"
+                markerHeight="6"
+                orient="auto-start-reverse"
+              >
+                <path
+                  d="M0,0 L10,5 L0,10 z"
+                  fill="var(--accent-ink)"
+                />
+              </marker>
+            </defs>
+
+            {/* Customer Wallet box */}
+            <g>
+              <rect
+                x="20"
+                y="20"
+                width="160"
+                height="70"
+                rx="4"
+                fill="var(--background)"
+                stroke="currentColor"
+                strokeWidth="1"
+              />
+              <text x="100" y="48" textAnchor="middle" fontSize="11" fill="var(--accent-ink)">
+                01
+              </text>
+              <text
+                x="100"
+                y="72"
+                textAnchor="middle"
+                fontSize="13"
+                fontWeight="700"
+                fill="currentColor"
+              >
+                customer wallet
+              </text>
+            </g>
+
+            {/* Permit2 box */}
+            <g>
+              <rect
+                x="280"
+                y="20"
+                width="160"
+                height="70"
+                rx="4"
+                fill="var(--background)"
+                stroke="currentColor"
+                strokeWidth="1"
+              />
+              <text x="360" y="48" textAnchor="middle" fontSize="11" fill="var(--accent-ink)">
+                02
+              </text>
+              <text
+                x="360"
+                y="72"
+                textAnchor="middle"
+                fontSize="13"
+                fontWeight="700"
+                fill="currentColor"
+              >
+                permit2
+              </text>
+            </g>
+
+            {/* SubscriptionManager box */}
+            <g>
+              <rect
+                x="540"
+                y="20"
+                width="160"
+                height="70"
+                rx="4"
+                fill="var(--background)"
+                stroke="var(--accent-ink)"
+                strokeWidth="1.5"
+              />
+              <text x="620" y="48" textAnchor="middle" fontSize="11" fill="var(--accent-ink)">
+                03
+              </text>
+              <text
+                x="620"
+                y="72"
+                textAnchor="middle"
+                fontSize="13"
+                fontWeight="700"
+                fill="currentColor"
+              >
+                cadence manager
+              </text>
+            </g>
+
+            {/* Arrows top row */}
+            <line
+              x1="180"
+              y1="55"
+              x2="280"
+              y2="55"
+              stroke="currentColor"
+              strokeWidth="1"
+              markerEnd="url(#arrow)"
+            />
+            <text x="230" y="48" textAnchor="middle" fontSize="10" fill="currentColor">
+              sign
+            </text>
+            <line
+              x1="440"
+              y1="55"
+              x2="540"
+              y2="55"
+              stroke="currentColor"
+              strokeWidth="1"
+              markerEnd="url(#arrow)"
+            />
+            <text x="490" y="48" textAnchor="middle" fontSize="10" fill="currentColor">
+              allowance
+            </text>
+
+            {/* Down arrow from manager */}
+            <line
+              x1="620"
+              y1="90"
+              x2="620"
+              y2="160"
+              stroke="var(--accent-ink)"
+              strokeWidth="1.5"
+              markerEnd="url(#arrowAccent)"
+            />
+            <text x="635" y="130" fontSize="10" fill="var(--accent-ink)">
+              charge()
+            </text>
+
+            {/* Split point */}
+            <circle cx="620" cy="170" r="3" fill="var(--accent-ink)" />
+
+            {/* Three split lines */}
+            <line
+              x1="620"
+              y1="170"
+              x2="160"
+              y2="270"
+              stroke="var(--accent-ink)"
+              strokeWidth="1"
+              markerEnd="url(#arrowAccent)"
+            />
+            <line
+              x1="620"
+              y1="170"
+              x2="360"
+              y2="270"
+              stroke="var(--accent-ink)"
+              strokeWidth="1"
+              markerEnd="url(#arrowAccent)"
+            />
+            <line
+              x1="620"
+              y1="170"
+              x2="620"
+              y2="270"
+              stroke="var(--accent-ink)"
+              strokeWidth="1"
+              markerEnd="url(#arrowAccent)"
+            />
+
+            {/* Bottom row: merchant, keeper, fee recipient */}
+            <g>
+              <rect
+                x="80"
+                y="270"
+                width="160"
+                height="60"
+                rx="4"
+                fill="var(--background)"
+                stroke="currentColor"
+                strokeWidth="1"
+              />
+              <text
+                x="160"
+                y="295"
+                textAnchor="middle"
+                fontSize="11"
+                fontWeight="700"
+                fill="currentColor"
+              >
+                merchant
+              </text>
+              <text
+                x="160"
+                y="313"
+                textAnchor="middle"
+                fontSize="10"
+                fill="var(--accent-ink)"
+              >
+                99.0%
+              </text>
+            </g>
+
+            <g>
+              <rect
+                x="280"
+                y="270"
+                width="160"
+                height="60"
+                rx="4"
+                fill="var(--background)"
+                stroke="currentColor"
+                strokeWidth="1"
+              />
+              <text
+                x="360"
+                y="295"
+                textAnchor="middle"
+                fontSize="11"
+                fontWeight="700"
+                fill="currentColor"
+              >
+                keeper bounty
+              </text>
+              <text
+                x="360"
+                y="313"
+                textAnchor="middle"
+                fontSize="10"
+                fill="var(--accent-ink)"
+              >
+                0.5%
+              </text>
+            </g>
+
+            <g>
+              <rect
+                x="540"
+                y="270"
+                width="160"
+                height="60"
+                rx="4"
+                fill="var(--background)"
+                stroke="currentColor"
+                strokeWidth="1"
+              />
+              <text
+                x="620"
+                y="295"
+                textAnchor="middle"
+                fontSize="11"
+                fontWeight="700"
+                fill="currentColor"
+              >
+                protocol fee
+              </text>
+              <text
+                x="620"
+                y="313"
+                textAnchor="middle"
+                fontSize="10"
+                fill="var(--accent-ink)"
+              >
+                0.5%
+              </text>
+            </g>
+          </svg>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function BuiltOn() {
+  const items = [
+    {
+      k: "Permit2",
+      v: "AllowanceTransfer",
+      d: "Uniswap's canonical universal token approval contract. Battle tested across the largest DEX in the world.",
+    },
+    {
+      k: "OpenZeppelin",
+      v: "v5",
+      d: "ReentrancyGuard, SafeERC20, and standard ERC20 interfaces. The auditing reference for Solidity.",
+    },
+    {
+      k: "Solidity",
+      v: "0.8.30",
+      d: "Latest stable compiler. Built-in overflow checks. No experimental flags.",
+    },
+    {
+      k: "Foundry",
+      v: "23 tests",
+      d: "Property-style tests cover plan creation, subscribe, recurring charge, three-way split, cancellation, and edge cases.",
+    },
+  ];
+  return (
+    <section className="hairline-b">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 py-20">
+        <div className="flex items-baseline justify-between mb-8">
+          <div>
+            <Pill>Foundations</Pill>
+            <h2 className="mt-4 text-[32px] leading-tight tracking-[-0.02em] font-700">
+              Built on primitives, not promises.
+            </h2>
+          </div>
+          <a
+            href="https://github.com/Trevor00s/Cadence/blob/main/contracts/src/SubscriptionManager.sol"
+            target="_blank"
+            rel="noreferrer"
+            className="hidden md:inline text-[12px] font-mono text-muted-foreground hover:text-[color:var(--accent-ink)]"
+          >
+            read the contract →
+          </a>
+        </div>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {items.map((it) => (
+            <div key={it.k} className="border border-rule rounded-md bg-card p-5">
+              <div className="font-mono text-[12px] text-[color:var(--accent-ink)]">
+                {it.k.toLowerCase()}
+              </div>
+              <div className="mt-1 text-[18px] font-700 tracking-tight">
+                {it.v}
+              </div>
+              <p className="mt-2 text-[13px] text-muted-foreground leading-relaxed">
+                {it.d}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -157,6 +647,8 @@ function Landing() {
         </div>
       </section>
 
+      <MetricsBoard />
+
       {/* Primitive row */}
       <section className="hairline-b hairline">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 grid md:grid-cols-3">
@@ -197,6 +689,8 @@ function Landing() {
           ))}
         </div>
       </section>
+
+      <FlowDiagram />
 
       {/* For developers */}
       <section className="mx-auto max-w-6xl px-4 sm:px-6 py-20">
@@ -394,6 +888,8 @@ function Landing() {
           </div>
         </div>
       </section>
+
+      <BuiltOn />
 
       {/* FAQ */}
       <section className="hairline-b hairline">
