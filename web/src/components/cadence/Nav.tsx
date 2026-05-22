@@ -38,7 +38,7 @@ function ConnectSlot() {
 export function Nav() {
   return (
     <header className="hairline-b sticky top-0 z-30 bg-background/85 backdrop-blur">
-      <div className="mx-auto flex h-14 max-w-6xl items-center gap-6 px-4 sm:px-6">
+      <div className="mx-auto grid h-14 max-w-6xl grid-cols-[auto_1fr_auto] items-center gap-6 px-4 sm:px-6">
         <Link
           to="/"
           className="flex items-center gap-2 font-mono text-[15px] font-700 tracking-tight"
@@ -47,7 +47,7 @@ export function Nav() {
           cadence
           <span className="text-muted-foreground font-500">/arc</span>
         </Link>
-        <nav className="hidden md:flex items-center gap-5 text-[13px] text-muted-foreground">
+        <nav className="hidden md:flex items-center justify-center gap-7 text-[13px] text-muted-foreground">
           <Link
             to="/merchant"
             className="hover:text-foreground"
@@ -77,7 +77,7 @@ export function Nav() {
             Docs
           </Link>
         </nav>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="flex items-center justify-end gap-2">
           <ThemeToggle />
           <ConnectSlot />
         </div>
