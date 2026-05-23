@@ -29,7 +29,7 @@ import { humanizeError } from "@/lib/cadence/errors";
 export const Route = createFileRoute("/merchant")({
   head: () => ({
     meta: [
-      { title: "Merchant. Create a plan. Cadence." },
+      { title: "Merchant. Create a plan. Cadence Drip." },
       {
         name: "description",
         content:
@@ -352,7 +352,7 @@ function WrongChainCard({ onSwitch }: { onSwitch: () => void }) {
   return (
     <div className="mt-10 border border-rule rounded-md bg-card p-6 max-w-[560px]">
       <div className="text-[14px]">
-        Wrong network. Cadence runs on Arc Testnet (chain 5042002).
+        Wrong network. Cadence Drip runs on Arc Testnet (chain 5042002).
       </div>
       <button
         onClick={onSwitch}

@@ -5,11 +5,11 @@ import { ARC_TESTNET } from "@/lib/cadence/chain";
 export const Route = createFileRoute("/docs")({
   head: () => ({
     meta: [
-      { title: "Docs. Cadence." },
+      { title: "Docs. Cadence Drip." },
       {
         name: "description",
         content:
-          "Technical reference for Cadence, the open USDC subscription protocol on Arc. Contracts, flow, integration.",
+          "Technical reference for Cadence Drip, the open USDC subscription protocol on Arc. Contracts, flow, integration.",
       },
     ],
   }),
@@ -18,7 +18,7 @@ export const Route = createFileRoute("/docs")({
 
 const sections = [
   { id: "quick-start", label: "Quick start" },
-  { id: "what", label: "What Cadence is" },
+  { id: "what", label: "What Cadence Drip is" },
   { id: "flow", label: "The flow" },
   { id: "permit2", label: "Why Permit2" },
   { id: "bounty", label: "Why a bounty model" },
@@ -90,7 +90,7 @@ function DocsPage() {
           documentation
         </div>
         <h1 className="mt-2 text-[40px] tracking-[-0.025em] leading-[1.05] font-800">
-          Cadence protocol.
+          Cadence Drip protocol.
         </h1>
 
         <Section id="quick-start" title="Quick start">
@@ -140,9 +140,9 @@ if (!await hasActiveSubscription(client, MANAGER, wallet, planId)) {
           </p>
         </Section>
 
-        <Section id="what" title="What Cadence is">
+        <Section id="what" title="What Cadence Drip is">
           <p>
-            Cadence is an open protocol for recurring USDC subscriptions on the
+            Cadence Drip is an open protocol for recurring USDC subscriptions on the
             Arc Network. It encodes the lifecycle of a subscription as three
             onchain actions: a merchant publishes a plan, a customer authorizes
             a Permit2 allowance, and a public keeper charges the subscription
@@ -152,7 +152,7 @@ if (!await hasActiveSubscription(client, MANAGER, wallet, planId)) {
             There is no platform, no operator, and no privileged role beyond the
             merchant address that created a plan. A plan can only be
             deactivated by its merchant. A subscription can only be cancelled by
-            its subscriber. Cadence holds no funds at any point.
+            its subscriber. Cadence Drip holds no funds at any point.
           </p>
           <p>
             The contract is deployed at{" "}
@@ -208,7 +208,7 @@ if (!await hasActiveSubscription(client, MANAGER, wallet, planId)) {
         <Section id="bounty" title="Why a bounty model">
           <p>
             Renewals must be triggered. In a centralized stack this is a cron
-            job operated by the platform. Cadence does not have a platform, so
+            job operated by the platform. Cadence Drip does not have a platform, so
             renewals are made permissionless: anyone can call{" "}
             <code className="font-mono">charge</code> when a subscription is
             due, and the caller earns a share of the charge as a bounty,
@@ -260,14 +260,14 @@ if (!await hasActiveSubscription(client, MANAGER, wallet, planId)) {
         <Section id="migrate" title="Migrate from Stripe Billing">
           <p>
             If you have an existing SaaS on Stripe Billing, here is the
-            mapping. Every concept on the left has a Cadence counterpart.
+            mapping. Every concept on the left has a Cadence Drip counterpart.
           </p>
           <div className="overflow-x-auto rounded-md border border-rule mt-3">
             <table className="w-full text-[13.5px]">
               <thead className="bg-muted/40 text-[11px] uppercase tracking-[0.08em] font-600 text-muted-foreground">
                 <tr>
                   <th className="text-left px-4 py-2.5">Stripe</th>
-                  <th className="text-left px-4 py-2.5">Cadence</th>
+                  <th className="text-left px-4 py-2.5">Cadence Drip</th>
                 </tr>
               </thead>
               <tbody>
@@ -301,7 +301,7 @@ if (!await hasActiveSubscription(client, MANAGER, wallet, planId)) {
           </h3>
           <ol className="list-decimal pl-5 space-y-2.5">
             <li>
-              Recreate each Stripe Price as a Cadence plan via the merchant
+              Recreate each Stripe Price as a Cadence Drip plan via the merchant
               console. Record planId per tier.
             </li>
             <li>
@@ -360,7 +360,7 @@ if (!await hasActiveSubscription(client, MANAGER, wallet, planId)) {
 
         <Section id="paths" title="Integration paths">
           <p>
-            Three ways to wire Cadence into a SaaS. Pick by how much control you
+            Three ways to wire Cadence Drip into a SaaS. Pick by how much control you
             want over the customer flow.
           </p>
 
@@ -368,7 +368,7 @@ if (!await hasActiveSubscription(client, MANAGER, wallet, planId)) {
             Path 1. Hosted redirect (10 minutes)
           </h3>
           <p>
-            Send the customer to the Cadence hosted checkout. Read on-chain
+            Send the customer to the Cadence Drip hosted checkout. Read on-chain
             whether they subscribed on return. Simplest possible integration.
           </p>
           <Code>{`const url = \`https://cadence.your-domain/subscribe?plan=\${planId}\`
@@ -681,7 +681,7 @@ client.watchEvent({
             verifyingContract is on a chain the wallet has not been told about.
             Make sure your wagmi config has Arc Testnet defined and that
             RainbowKit's <code className="font-mono">initialChain</code> points
-            to it. The Cadence SDK exports{" "}
+            to it. The Cadence Drip SDK exports{" "}
             <code className="font-mono">arcTestnet</code> for this.
           </p>
 
@@ -738,7 +738,7 @@ client.watchEvent({
             </li>
             <li>
               <b>Chargebacks / KYC.</b> If you need either, you need a
-              different stack (or layer it on top of Cadence).
+              different stack (or layer it on top of Cadence Drip).
             </li>
           </ul>
         </Section>
@@ -759,7 +759,7 @@ client.watchEvent({
               broadcasting, confirmed. Wallet UX is unforgiving.
             </li>
             <li>
-              Fallback RPC URL. Cadence depends on no central infra except
+              Fallback RPC URL. Cadence Drip depends on no central infra except
               your chosen RPC.
             </li>
             <li>
@@ -852,7 +852,7 @@ client.watchEvent({
               Pre-production
             </div>
             <div className="text-[14px]">
-              The Cadence contracts are unaudited. Use on Arc Testnet only. Do
+              The Cadence Drip contracts are unaudited. Use on Arc Testnet only. Do
               not use with funds you cannot afford to lose.
             </div>
           </div>

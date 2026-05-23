@@ -75,7 +75,7 @@ export function Nav() {
           className="flex items-center gap-2 font-mono text-[15px] font-700 tracking-tight"
         >
           <span className="inline-block h-3 w-3 rounded-[2px] bg-[color:var(--accent-ink)]" />
-          cadence
+          cadencedrip
           <span className="text-muted-foreground font-500">/arc</span>
         </Link>
         <nav className="hidden md:flex items-center justify-center gap-7 text-[13px] text-muted-foreground">
@@ -122,7 +122,7 @@ export function Footer() {
     <footer className="hairline mt-24">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 py-10 grid gap-6 md:grid-cols-3 text-[13px]">
         <div>
-          <div className="font-mono text-foreground">cadence</div>
+          <div className="font-mono text-foreground">cadencedrip</div>
           <p className="mt-2 text-muted-foreground">
             Open protocol for recurring USDC subscriptions on Arc. No custody,
             no API keys.

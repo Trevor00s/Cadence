@@ -44,7 +44,7 @@ export const Route = createFileRoute("/subscribe")({
   },
   head: () => ({
     meta: [
-      { title: "Subscribe. Cadence." },
+      { title: "Subscribe. Cadence Drip." },
       {
         name: "description",
         content:

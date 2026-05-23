@@ -1,6 +1,6 @@
 # Keeper deployment
 
-The Cadence keeper is the actor that calls `charge(subId)` on due subscriptions, collects the keeper bounty, and keeps the protocol moving. Anyone can run one. This repo ships two ways to host it.
+The Cadence Drip keeper is the actor that calls `charge(subId)` on due subscriptions, collects the keeper bounty, and keeps the protocol moving. Anyone can run one. This repo ships two ways to host it.
 
 ## Option A: Vercel Cron (recommended for testnet)
 

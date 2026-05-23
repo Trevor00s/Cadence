@@ -21,11 +21,11 @@ import { SubscriptionRowSkeleton } from "@/components/cadence/Skeleton";
 export const Route = createFileRoute("/subscriptions")({
   head: () => ({
     meta: [
-      { title: "My subscriptions. Cadence." },
+      { title: "My subscriptions. Cadence Drip." },
       {
         name: "description",
         content:
-          "Active and past Cadence subscriptions tied to your wallet on Arc.",
+          "Active and past Cadence Drip subscriptions tied to your wallet on Arc.",
       },
     ],
   }),

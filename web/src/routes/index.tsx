@@ -6,7 +6,7 @@ import { ARC_TESTNET, subscriptionManagerAbi } from "@/lib/cadence/chain";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Cadence. Recurring USDC subscriptions on Arc." },
+      { title: "Cadence Drip. Recurring USDC subscriptions on Arc." },
       {
         name: "description",
         content:
@@ -617,7 +617,7 @@ function BuiltOn() {
             </h2>
           </div>
           <a
-            href="https://github.com/Trevor00s/Cadence/blob/main/contracts/src/SubscriptionManager.sol"
+            href="https://github.com/Trevor00s/Cadence Drip/blob/main/contracts/src/SubscriptionManager.sol"
             target="_blank"
             rel="noreferrer"
             className="hidden md:inline text-[12px] font-mono text-muted-foreground hover:text-[color:var(--accent-ink)]"
@@ -853,7 +853,7 @@ function Landing() {
               Off-chain authorization is a promise. Permit2 is a primitive.
             </h2>
             <p className="mt-4 text-[14px] text-muted-foreground leading-relaxed">
-              Cadence is built on the same allowance contract used across
+              Cadence Drip is built on the same allowance contract used across
               Uniswap and most major DEXes. There is no off-chain ledger to
               trust.
             </p>
@@ -863,7 +863,7 @@ function Landing() {
               <div className="px-4 py-3"> </div>
               <div className="px-4 py-3">Off-chain auth gateway</div>
               <div className="px-4 py-3 text-[color:var(--accent-ink)]">
-                Cadence
+                Cadence Drip
               </div>
             </div>
             {[
@@ -923,7 +923,7 @@ function Landing() {
               Zero protocol fees.
             </h2>
             <p className="mt-4 text-[14px] text-muted-foreground leading-relaxed">
-              Cadence does not take a cut. The only costs paid by anyone are
+              Cadence Drip does not take a cut. The only costs paid by anyone are
               gas (in USDC, on Arc) and the keeper bounty that the merchant
               themselves configures.
             </p>
@@ -991,7 +991,7 @@ function Landing() {
                 <>
                   Stripe is custodial. Stripe holds your money, can freeze your
                   account, and acts as the contract between you and your
-                  customer. Cadence is a public contract. Payments go wallet to
+                  customer. Cadence Drip is a public contract. Payments go wallet to
                   wallet. The protocol cannot take, freeze, or reroute funds.
                   You also give up everything Stripe gives you: chargebacks,
                   KYC, fiat off-ramp, tax invoices. Different tool, different
@@ -1020,7 +1020,7 @@ function Landing() {
               }
             />
             <FaqItem
-              q="How does Cadence make money?"
+              q="How does Cadence Drip make money?"
               a={
                 <>
                   It doesn't. There is no protocol fee, no treasury, and no

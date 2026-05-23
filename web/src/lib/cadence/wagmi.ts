@@ -24,7 +24,7 @@ const connectors = connectorsForWallets(
     },
   ],
   {
-    appName: "Cadence",
+    appName: "Cadence Drip",
     projectId,
   },
 );

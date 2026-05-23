@@ -1,6 +1,6 @@
-# Integrating Cadence in your SaaS
+# Integrating Cadence Drip in your SaaS
 
-This guide is for developers shipping a SaaS who want to gate features behind a recurring USDC subscription, settled on Arc Network via the Cadence protocol. It assumes you already have a product, you know your customers, and you want to replace (or sit alongside) a Stripe-style billing layer.
+This guide is for developers shipping a SaaS who want to gate features behind a recurring USDC subscription, settled on Arc Network via the Cadence Drip protocol. It assumes you already have a product, you know your customers, and you want to replace (or sit alongside) a Stripe-style billing layer.
 
 ## What you get
 
@@ -38,7 +38,7 @@ You pay gas for `createPlan`. Customers pay gas for `subscribe` and `cancel`. Ke
 
 ### Path 1: hosted redirect (10 minutes)
 
-Simplest. Send your customer to the Cadence hosted checkout with a query param, listen for completion off-chain or just trust the on-chain state.
+Simplest. Send your customer to the Cadence Drip hosted checkout with a query param, listen for completion off-chain or just trust the on-chain state.
 
 ```ts
 // In your pricing page handler
@@ -56,7 +56,7 @@ Pros: zero frontend code. Cons: customer leaves your domain.
 
 ### Path 2: embed the subscribe flow in your own UI
 
-Use the Cadence SDK to drive Permit2 approval, signature, and the `subscribe` transaction from inside your own React app. The customer never leaves your site.
+Use the Cadence Drip SDK to drive Permit2 approval, signature, and the `subscribe` transaction from inside your own React app. The customer never leaves your site.
 
 Install:
 
@@ -230,7 +230,7 @@ You can have multiple plans (tiers). One `createPlan` per tier, store the `planI
 
 - **Refunds**. There is no `refund()` on the contract. If you want to refund a customer, send USDC from your wallet to theirs out of band, and treat it as your own bookkeeping.
 - **Proration**. Charges are full-amount, full-period. If you change tiers, cancel the old sub and start a new one.
-- **Trials**. There is no concept of a free period at the protocol level. Implement trials in your own app (grant access without requiring a Cadence sub for the trial window, then redirect to subscribe).
+- **Trials**. There is no concept of a free period at the protocol level. Implement trials in your own app (grant access without requiring a Cadence Drip sub for the trial window, then redirect to subscribe).
 - **Tax invoices**. The on-chain transactions are your receipts. If you need PDF invoices, render them yourself from the indexer mirror.
 
 ## Production checklist
@@ -240,7 +240,7 @@ Before pointing real customers at this:
 - Plan and amount values are denominated in token base units. Sanity-check by reading `plans(planId)` after creation.
 - Cache `isEntitled` reads for 30 to 60 seconds. Do not hammer the RPC per request.
 - Subscribe and cancel actions need clear UI states (approving, signing, broadcasting, confirmed). Wallet UX is unforgiving.
-- Watch for RPC failures. Have a fallback RPC URL. Cadence does not depend on any centralised infra except whatever RPC you use.
+- Watch for RPC failures. Have a fallback RPC URL. Cadence Drip does not depend on any centralised infra except whatever RPC you use.
 - For mainnet, the contracts are pre-production and unaudited. Audit before deploying with real money.
 
 ## Reference
