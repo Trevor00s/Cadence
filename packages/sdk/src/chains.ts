@@ -47,6 +47,6 @@ export const TOKEN_DECIMALS = {
 /// Cadence deployments. Populated after running script/Deploy.s.sol.
 export const cadenceDeployments: Record<number, { subscriptionManager: Address } | undefined> = {
   [arcTestnet.id]: {
-    subscriptionManager: '0xA147fD88f8daA76621560B99C346037750E9e718' as Address,
+    subscriptionManager: '0xa147Fd88F8dAa76621560B99C346037750e9e718' as Address,
   },
 }

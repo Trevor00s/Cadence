@@ -4,7 +4,7 @@ export const ARC_TESTNET = {
   id: 5042002,
   rpc: "https://rpc.testnet.arc.network",
   explorer: "https://testnet.arcscan.app",
-  subscriptionManager: "0xA147fD88f8daA76621560B99C346037750E9e718" as const,
+  subscriptionManager: "0xa147Fd88F8dAa76621560B99C346037750e9e718" as const,
   protocolFeeRecipient: "0xE518ad6AD52cB5FF81C960CcA543B09F258e74b0" as const,
   usdc: "0x3600000000000000000000000000000000000000" as const,
   eurc: "0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a" as const,
