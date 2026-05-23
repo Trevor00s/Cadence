@@ -44,11 +44,35 @@ export const Route = createFileRoute("/merchant")({
 });
 
 const PERIODS: { label: string; seconds: number }[] = [
+  { label: "Hourly (testnet demo)", seconds: 3600 },
   { label: "Daily", seconds: 86400 },
   { label: "Weekly", seconds: 7 * 86400 },
   { label: "Monthly (30d)", seconds: 30 * 86400 },
   { label: "Yearly (365d)", seconds: 365 * 86400 },
 ];
+
+function humanizeError(err: unknown): string {
+  const raw =
+    (err as { shortMessage?: string })?.shortMessage ||
+    (err instanceof Error ? err.message : String(err));
+  const s = raw.toLowerCase();
+  if (s.includes("user rejected") || s.includes("user denied"))
+    return "Signature rejected in wallet.";
+  if (s.includes("insufficient funds"))
+    return "Wallet does not have enough USDC for gas. Top up via the faucet.";
+  if (s.includes("insufficient allowance"))
+    return "Permit2 allowance is exhausted. Subscribe again to refresh it.";
+  if (s.includes("notdue")) return "This subscription is not due yet.";
+  if (s.includes("alreadycancelled"))
+    return "This subscription is already cancelled.";
+  if (s.includes("planinactive"))
+    return "This plan has been deactivated by the merchant.";
+  if (s.includes("invalidamount"))
+    return "Amount must be greater than zero.";
+  if (s.includes("periodtoshort") || s.includes("period too short"))
+    return "Period must be at least 1 hour.";
+  return raw.split("\n")[0];
+}
 
 function MerchantPage() {
   const { address, isConnected } = useAccount();
@@ -119,12 +143,7 @@ function MerchantPage() {
       });
     } catch (err) {
       console.error(err);
-      const msg = err instanceof Error ? err.message : String(err);
-      // viem prepends a long message header; the shortMessage is more useful.
-      const shortMsg =
-        (err as { shortMessage?: string })?.shortMessage ||
-        msg.split("\n")[0];
-      setSubmitError(shortMsg);
+      setSubmitError(humanizeError(err));
     }
   }
 

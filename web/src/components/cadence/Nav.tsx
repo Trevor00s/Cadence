@@ -3,17 +3,24 @@ import { useEffect, useState } from "react";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { Moon, Sun } from "lucide-react";
 
+const THEME_KEY = "cadence-theme";
+
 function ThemeToggle() {
   const [dark, setDark] = useState(false);
   useEffect(() => {
-    const isDark = document.documentElement.classList.contains("dark");
-    setDark(isDark);
+    const stored = localStorage.getItem(THEME_KEY);
+    const initial = stored
+      ? stored === "dark"
+      : document.documentElement.classList.contains("dark");
+    document.documentElement.classList.toggle("dark", initial);
+    setDark(initial);
   }, []);
   return (
     <button
       onClick={() => {
         const next = !dark;
         document.documentElement.classList.toggle("dark", next);
+        localStorage.setItem(THEME_KEY, next ? "dark" : "light");
         setDark(next);
       }}
       className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-rule text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -21,6 +28,30 @@ function ThemeToggle() {
     >
       {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
     </button>
+  );
+}
+
+export function TestnetBanner() {
+  return (
+    <div className="border-b border-rule bg-[color:var(--accent-ink)]/10">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 py-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-[12px]">
+        <span className="inline-flex items-center gap-2">
+          <span className="inline-block h-1.5 w-1.5 rounded-full bg-[color:var(--accent-ink)] animate-pulse" />
+          <span className="text-foreground font-600">Testnet preview</span>
+          <span className="text-muted-foreground">
+            Use test USDC only. Contract is unaudited.
+          </span>
+        </span>
+        <a
+          href="https://faucet.testnet.arc.network"
+          target="_blank"
+          rel="noreferrer"
+          className="font-mono text-muted-foreground hover:text-[color:var(--accent-ink)]"
+        >
+          get test USDC →
+        </a>
+      </div>
+    </div>
   );
 }
 

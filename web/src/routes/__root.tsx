@@ -7,7 +7,7 @@ import {
 } from "@tanstack/react-router";
 
 import { Web3Providers } from "@/components/cadence/Providers";
-import { Nav, Footer } from "@/components/cadence/Nav";
+import { Nav, Footer, TestnetBanner } from "@/components/cadence/Nav";
 
 function NotFoundComponent() {
   return (
@@ -82,6 +82,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <Web3Providers>
         <div className="min-h-screen flex flex-col">
+          <TestnetBanner />
           <Nav />
           <main className="flex-1">
             <Outlet />
