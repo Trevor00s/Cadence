@@ -43,7 +43,7 @@ export function TestnetBanner() {
           </span>
         </span>
         <a
-          href="https://faucet.testnet.arc.network"
+          href="https://faucet.circle.com/"
           target="_blank"
           rel="noreferrer"
           className="font-mono text-muted-foreground hover:text-[color:var(--accent-ink)]"
