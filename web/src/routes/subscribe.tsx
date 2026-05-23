@@ -87,17 +87,161 @@ function SubscribePage() {
 
 function NoPlan() {
   return (
-    <div className="mt-8 border border-rule rounded-md bg-card p-8">
-      <div className="text-[15px] font-600">No plan specified.</div>
-      <p className="mt-2 text-[14px] text-muted-foreground">
-        Open a checkout with a plan ID, for example{" "}
-        <code className="font-mono text-foreground">/subscribe?plan=0</code>.
-        Merchants create plans on the{" "}
+    <div className="mt-8 space-y-6">
+      <div className="border border-rule rounded-md bg-card p-6">
+        <div className="text-[14px] text-muted-foreground">
+          Pick a plan below, or open a direct checkout link like{" "}
+          <code className="font-mono text-foreground">/subscribe?plan=0</code>.
+          Merchants create plans on the{" "}
+          <Link to="/merchant" className="underline">
+            merchant console
+          </Link>
+          .
+        </div>
+      </div>
+      <PlanBrowser />
+    </div>
+  );
+}
+
+function PlanBrowser() {
+  const publicClient = usePublicClient();
+  const [plans, setPlans] = useState<
+    | {
+        planId: bigint;
+        merchant: `0x${string}`;
+        token: `0x${string}`;
+        amount: bigint;
+        period: number;
+        bountyBps: number;
+        active: boolean;
+      }[]
+    | null
+  >(null);
+
+  useEffect(() => {
+    if (!publicClient) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const nextPlanId = (await publicClient.readContract({
+          address: ARC_TESTNET.subscriptionManager,
+          abi: subscriptionManagerAbi,
+          functionName: "nextPlanId",
+        })) as bigint;
+
+        const collected: NonNullable<typeof plans> = [];
+        for (let id = 0n; id < nextPlanId; id++) {
+          const [merchant, token, amount, period, bountyBps, active] =
+            (await publicClient.readContract({
+              address: ARC_TESTNET.subscriptionManager,
+              abi: subscriptionManagerAbi,
+              functionName: "plans",
+              args: [id],
+            })) as readonly [
+              `0x${string}`,
+              `0x${string}`,
+              bigint,
+              number,
+              number,
+              boolean,
+            ];
+          collected.push({
+            planId: id,
+            merchant,
+            token,
+            amount,
+            period,
+            bountyBps,
+            active,
+          });
+        }
+        if (!cancelled) setPlans(collected.reverse());
+      } catch {
+        if (!cancelled) setPlans([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [publicClient]);
+
+  if (plans === null) {
+    return (
+      <div className="text-[14px] text-muted-foreground">Loading plans…</div>
+    );
+  }
+  if (plans.length === 0) {
+    return (
+      <div className="border border-rule rounded-md bg-card p-6 text-[14px] text-muted-foreground">
+        No plans created yet. A merchant needs to create one first via the{" "}
         <Link to="/merchant" className="underline">
           merchant console
         </Link>
         .
-      </p>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="flex items-baseline justify-between mb-3">
+        <div className="text-[11px] uppercase tracking-[0.08em] text-muted-foreground font-600">
+          Available plans
+        </div>
+        <div className="text-[11px] text-muted-foreground font-mono">
+          {plans.filter((p) => p.active).length} active /{" "}
+          {plans.length} total
+        </div>
+      </div>
+      <div className="grid sm:grid-cols-2 gap-3">
+        {plans.map((p) => (
+          <div
+            key={p.planId.toString()}
+            className="border border-rule rounded-md bg-card p-5 flex flex-col"
+          >
+            <div className="flex items-baseline justify-between">
+              <span className="font-mono text-[11px] text-muted-foreground">
+                plan #{p.planId.toString()}
+              </span>
+              <span
+                className={
+                  "text-[10px] font-600 uppercase tracking-[0.08em] " +
+                  (p.active
+                    ? "text-[color:var(--accent-ink)]"
+                    : "text-muted-foreground")
+                }
+              >
+                {p.active ? "active" : "inactive"}
+              </span>
+            </div>
+            <div className="mt-3 flex items-baseline gap-2 tabular">
+              <span className="text-[24px] font-700 tracking-[-0.02em]">
+                {formatUsdc(p.amount)}
+              </span>
+              <span className="text-[13px] text-muted-foreground">USDC</span>
+            </div>
+            <div className="text-[12.5px] text-muted-foreground">
+              every {periodLong(p.period)}
+            </div>
+            <div className="mt-3 text-[11px] text-muted-foreground font-mono">
+              merchant {shortAddr(p.merchant)}
+            </div>
+            <Link
+              to="/subscribe"
+              search={{ plan: Number(p.planId) }}
+              className={
+                "mt-5 inline-flex items-center justify-center rounded-md px-3 py-2 text-[13px] font-600 " +
+                (p.active
+                  ? "bg-primary text-primary-foreground hover:opacity-90"
+                  : "border border-rule text-muted-foreground pointer-events-none")
+              }
+            >
+              {p.active ? "Open checkout" : "Inactive"}
+            </Link>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
