@@ -617,7 +617,7 @@ function BuiltOn() {
             </h2>
           </div>
           <a
-            href="https://github.com/Trevor00s/Cadence Drip/blob/main/contracts/src/SubscriptionManager.sol"
+            href="https://github.com/Trevor00s/Cadence/blob/main/contracts/src/SubscriptionManager.sol"
             target="_blank"
             rel="noreferrer"
             className="hidden md:inline text-[12px] font-mono text-muted-foreground hover:text-[color:var(--accent-ink)]"
