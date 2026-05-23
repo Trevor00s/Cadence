@@ -17,15 +17,14 @@ This guide is for developers shipping a SaaS who want to gate features behind a 
 
 ## Cost
 
-A flat 0.5% protocol fee is deducted from every charge and routed by the contract to an immutable treasury address. The rate is a Solidity constant (`PROTOCOL_FEE_BPS = 50`), not storage: it cannot be raised after deploy.
+There is no protocol fee. Each charge splits two ways: the merchant cut and the keeper bounty that the merchant picked when creating the plan.
 
-So a 10 USDC monthly charge splits as:
+So a 10 USDC monthly charge with a default 50 bps bounty splits as:
 
 | Recipient | Amount |
 |---|---|
-| Merchant | 9.95 USDC minus the keeper bounty |
-| Keeper (bountyBps you set, default 50 bps) | 0.05 USDC at default |
-| Protocol fee recipient | 0.05 USDC (fixed) |
+| Merchant | 9.95 USDC |
+| Keeper (bountyBps you set, default 50 bps) | 0.05 USDC |
 
 You pay gas for `createPlan`. Customers pay gas for `subscribe` and `cancel`. Keepers pay gas for `charge` and recover it from their bounty.
 

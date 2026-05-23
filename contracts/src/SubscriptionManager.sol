@@ -7,11 +7,10 @@ import {IAllowanceTransfer} from "./interfaces/IPermit2.sol";
 /// @title SubscriptionManager
 /// @notice Recurring ERC20 pull payments backed by Permit2 AllowanceTransfer.
 ///         Customer signs one Permit2 allowance; this contract pulls funds on cadence.
-///         Each charge splits into three parts: merchant cut, keeper bounty, and a fixed
-///         50 bps protocol fee routed to an immutable treasury address set at deploy time.
+///         Each charge splits into two parts: merchant cut and keeper bounty.
+///         There is no protocol fee. The merchant decides the bounty.
 contract SubscriptionManager is ReentrancyGuard {
     IAllowanceTransfer public immutable permit2;
-    address public immutable protocolFeeRecipient;
 
     struct Plan {
         address merchant;
@@ -31,7 +30,6 @@ contract SubscriptionManager is ReentrancyGuard {
     }
 
     uint16 public constant MAX_BOUNTY_BPS = 1_000; // 10%
-    uint16 public constant PROTOCOL_FEE_BPS = 50; // 0.5%, immutable
     uint48 public constant MIN_PERIOD = 1 hours;
 
     uint256 public nextPlanId;
@@ -56,7 +54,6 @@ contract SubscriptionManager is ReentrancyGuard {
         uint48 nextChargeAt,
         uint160 amountToMerchant,
         uint160 bountyToKeeper,
-        uint160 protocolFee,
         address keeper
     );
     event Cancelled(uint256 indexed subId, address by);
@@ -69,12 +66,9 @@ contract SubscriptionManager is ReentrancyGuard {
     error PeriodTooShort();
     error InvalidAmount();
     error BountyTooHigh();
-    error InvalidFeeRecipient();
 
-    constructor(address _permit2, address _protocolFeeRecipient) {
-        if (_protocolFeeRecipient == address(0)) revert InvalidFeeRecipient();
+    constructor(address _permit2) {
         permit2 = IAllowanceTransfer(_permit2);
-        protocolFeeRecipient = _protocolFeeRecipient;
     }
 
     // ---------------------------------------------------------------------
@@ -136,9 +130,9 @@ contract SubscriptionManager is ReentrancyGuard {
             cancelled: false
         });
 
-        (uint160 toMerchant, uint160 fee) = _executeCharge(msg.sender, p, address(0));
+        uint160 toMerchant = _executeCharge(msg.sender, p, address(0));
         emit Subscribed(subId, planId, msg.sender);
-        emit Charged(subId, uint48(block.timestamp), nextAt, toMerchant, 0, fee, address(0));
+        emit Charged(subId, uint48(block.timestamp), nextAt, toMerchant, 0, address(0));
     }
 
     /// @notice Subscribe without submitting a permit. Customer must have already granted
@@ -161,9 +155,9 @@ contract SubscriptionManager is ReentrancyGuard {
             cancelled: false
         });
 
-        (uint160 toMerchant, uint160 fee) = _executeCharge(msg.sender, p, address(0));
+        uint160 toMerchant = _executeCharge(msg.sender, p, address(0));
         emit Subscribed(subId, planId, msg.sender);
-        emit Charged(subId, uint48(block.timestamp), nextAt, toMerchant, 0, fee, address(0));
+        emit Charged(subId, uint48(block.timestamp), nextAt, toMerchant, 0, address(0));
     }
 
     function cancel(uint256 subId) external {
@@ -179,9 +173,8 @@ contract SubscriptionManager is ReentrancyGuard {
     // ---------------------------------------------------------------------
 
     /// @notice Charge a due subscription. Anyone can call. The caller receives
-    ///         `bountyBps` of the charge as a keeper bounty. The protocol fee
-    ///         (50 bps) is routed to `protocolFeeRecipient`. Both are deducted
-    ///         from the merchant's cut.
+    ///         `bountyBps` of the charge as a keeper bounty, deducted from the
+    ///         merchant's cut.
     function charge(uint256 subId) external nonReentrant {
         Subscription storage s = subscriptions[subId];
         if (s.cancelled) revert AlreadyCancelled();
@@ -194,33 +187,29 @@ contract SubscriptionManager is ReentrancyGuard {
         uint48 nextAt = s.nextCharge + p.period;
         s.nextCharge = nextAt;
 
-        (uint160 toMerchant, uint160 fee) = _executeCharge(s.subscriber, p, msg.sender);
+        uint160 toMerchant = _executeCharge(s.subscriber, p, msg.sender);
 
         uint160 bounty = uint160((uint256(p.amount) * p.bountyBps) / 10_000);
-        emit Charged(subId, uint48(block.timestamp), nextAt, toMerchant, bounty, fee, msg.sender);
+        emit Charged(subId, uint48(block.timestamp), nextAt, toMerchant, bounty, msg.sender);
     }
 
     // ---------------------------------------------------------------------
     // Internal
     // ---------------------------------------------------------------------
 
-    /// @dev Executes the three-way split of a single charge. `keeper == address(0)`
+    /// @dev Executes the two-way split of a single charge. `keeper == address(0)`
     ///      means this is a first-charge from subscribe(): no bounty is paid because
     ///      there is no keeper, the subscriber themselves triggered it.
     function _executeCharge(address from, Plan memory p, address keeper)
         internal
-        returns (uint160 toMerchant, uint160 fee)
+        returns (uint160 toMerchant)
     {
-        fee = uint160((uint256(p.amount) * PROTOCOL_FEE_BPS) / 10_000);
         uint160 bounty = keeper == address(0)
             ? 0
             : uint160((uint256(p.amount) * p.bountyBps) / 10_000);
-        toMerchant = p.amount - fee - bounty;
+        toMerchant = p.amount - bounty;
 
         permit2.transferFrom(from, p.merchant, toMerchant, p.token);
-        if (fee > 0) {
-            permit2.transferFrom(from, protocolFeeRecipient, fee, p.token);
-        }
         if (bounty > 0) {
             permit2.transferFrom(from, keeper, bounty, p.token);
         }

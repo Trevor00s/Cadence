@@ -16,17 +16,15 @@ contract SubscriptionManagerTest is Test {
     address merchant = makeAddr("merchant");
     address alice = makeAddr("alice");
     address keeper = makeAddr("keeper");
-    address feeRecipient = makeAddr("feeRecipient");
 
     uint160 constant PRICE = 10e6; // 10 USDC
     uint48 constant PERIOD = 30 days;
     uint16 constant BOUNTY_BPS = 50; // 0.5%
-    uint16 constant PROTOCOL_FEE_BPS = 50; // 0.5%
 
     function setUp() public {
         permit2 = new MockPermit2();
         usdc = new MockERC20("USDC", "USDC", 6);
-        mgr = new SubscriptionManager(address(permit2), feeRecipient);
+        mgr = new SubscriptionManager(address(permit2));
 
         usdc.mint(alice, 1_000e6);
 
@@ -108,18 +106,14 @@ contract SubscriptionManagerTest is Test {
         uint256 planId = _createDefaultPlan();
         uint256 aliceBefore = usdc.balanceOf(alice);
         uint256 merchantBefore = usdc.balanceOf(merchant);
-        uint256 feeBefore = usdc.balanceOf(feeRecipient);
 
         vm.prank(alice);
         uint256 subId = mgr.subscribe(planId, _defaultPermit(), "");
 
-        uint160 fee = uint160((uint256(PRICE) * PROTOCOL_FEE_BPS) / 10_000);
-
         assertEq(subId, 0);
         assertEq(usdc.balanceOf(alice), aliceBefore - PRICE);
-        // No keeper bounty on first charge: merchant gets PRICE - protocolFee.
-        assertEq(usdc.balanceOf(merchant), merchantBefore + (PRICE - fee));
-        assertEq(usdc.balanceOf(feeRecipient), feeBefore + fee);
+        // No keeper bounty on first charge: merchant gets the full PRICE.
+        assertEq(usdc.balanceOf(merchant), merchantBefore + PRICE);
 
         (uint256 pid, address sub, uint48 next,, bool cancelled) = mgr.subscriptions(subId);
         assertEq(pid, planId);
@@ -149,19 +143,16 @@ contract SubscriptionManagerTest is Test {
 
         uint256 merchantBefore = usdc.balanceOf(merchant);
         uint256 keeperBefore = usdc.balanceOf(keeper);
-        uint256 feeBefore = usdc.balanceOf(feeRecipient);
 
         vm.warp(block.timestamp + PERIOD);
         vm.prank(keeper);
         mgr.charge(subId);
 
         uint160 expectedBounty = uint160((uint256(PRICE) * BOUNTY_BPS) / 10_000);
-        uint160 expectedFee = uint160((uint256(PRICE) * PROTOCOL_FEE_BPS) / 10_000);
-        uint160 expectedMerchant = PRICE - expectedBounty - expectedFee;
+        uint160 expectedMerchant = PRICE - expectedBounty;
 
         assertEq(usdc.balanceOf(merchant), merchantBefore + expectedMerchant);
         assertEq(usdc.balanceOf(keeper), keeperBefore + expectedBounty);
-        assertEq(usdc.balanceOf(feeRecipient), feeBefore + expectedFee);
     }
 
     function test_charge_revertsBeforeDue() public {
@@ -206,8 +197,7 @@ contract SubscriptionManagerTest is Test {
         }
 
         uint160 expectedBounty = uint160((uint256(PRICE) * BOUNTY_BPS) / 10_000);
-        uint160 expectedFee = uint160((uint256(PRICE) * PROTOCOL_FEE_BPS) / 10_000);
-        uint160 expectedMerchantPer = PRICE - expectedBounty - expectedFee;
+        uint160 expectedMerchantPer = PRICE - expectedBounty;
         assertEq(usdc.balanceOf(merchant), merchantBefore + uint256(expectedMerchantPer) * 3);
     }
 
@@ -288,7 +278,7 @@ contract SubscriptionManagerTest is Test {
     // Zero bounty path
     // -----------------------------------------------------------------
 
-    function test_charge_zeroBounty_merchantGetsAllMinusFee() public {
+    function test_charge_zeroBounty_merchantGetsAll() public {
         vm.prank(merchant);
         uint256 planId = mgr.createPlan(address(usdc), PRICE, PERIOD, 0);
 
@@ -296,54 +286,22 @@ contract SubscriptionManagerTest is Test {
         uint256 subId = mgr.subscribe(planId, _defaultPermit(), "");
 
         uint256 merchantBefore = usdc.balanceOf(merchant);
-        uint256 feeBefore = usdc.balanceOf(feeRecipient);
 
         vm.warp(block.timestamp + PERIOD);
         vm.prank(keeper);
         mgr.charge(subId);
 
-        uint160 expectedFee = uint160((uint256(PRICE) * PROTOCOL_FEE_BPS) / 10_000);
-        assertEq(usdc.balanceOf(merchant), merchantBefore + (PRICE - expectedFee));
-        assertEq(usdc.balanceOf(feeRecipient), feeBefore + expectedFee);
+        assertEq(usdc.balanceOf(merchant), merchantBefore + PRICE);
         assertEq(usdc.balanceOf(keeper), 0);
     }
 
-    // -----------------------------------------------------------------
-    // Protocol fee
-    // -----------------------------------------------------------------
-
-    function test_protocolFeeBps_isFiftyBps() public view {
-        assertEq(mgr.PROTOCOL_FEE_BPS(), 50);
-    }
-
-    function test_protocolFeeRecipient_isImmutable() public view {
-        assertEq(mgr.protocolFeeRecipient(), feeRecipient);
-    }
-
-    function test_constructor_revertsOnZeroFeeRecipient() public {
-        vm.expectRevert(SubscriptionManager.InvalidFeeRecipient.selector);
-        new SubscriptionManager(address(permit2), address(0));
-    }
-
-    function test_subscribe_paysProtocolFee() public {
-        uint256 planId = _createDefaultPlan();
-        uint256 feeBefore = usdc.balanceOf(feeRecipient);
-
-        vm.prank(alice);
-        mgr.subscribe(planId, _defaultPermit(), "");
-
-        uint160 expectedFee = uint160((uint256(PRICE) * PROTOCOL_FEE_BPS) / 10_000);
-        assertEq(usdc.balanceOf(feeRecipient), feeBefore + expectedFee);
-    }
-
-    function test_charge_threeWaySplit_addsToTotal() public {
+    function test_charge_twoWaySplit_addsToTotal() public {
         uint256 planId = _createDefaultPlan();
         vm.prank(alice);
         uint256 subId = mgr.subscribe(planId, _defaultPermit(), "");
 
         uint256 merchantBefore = usdc.balanceOf(merchant);
         uint256 keeperBefore = usdc.balanceOf(keeper);
-        uint256 feeBefore = usdc.balanceOf(feeRecipient);
 
         vm.warp(block.timestamp + PERIOD);
         vm.prank(keeper);
@@ -351,9 +309,8 @@ contract SubscriptionManagerTest is Test {
 
         uint256 paidToMerchant = usdc.balanceOf(merchant) - merchantBefore;
         uint256 paidToKeeper = usdc.balanceOf(keeper) - keeperBefore;
-        uint256 paidToFee = usdc.balanceOf(feeRecipient) - feeBefore;
 
-        // The three outflows must sum to the plan price, exactly.
-        assertEq(paidToMerchant + paidToKeeper + paidToFee, PRICE);
+        // The two outflows must sum to the plan price, exactly.
+        assertEq(paidToMerchant + paidToKeeper, PRICE);
     }
 }

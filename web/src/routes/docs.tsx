@@ -222,13 +222,12 @@ if (!await hasActiveSubscription(client, MANAGER, wallet, planId)) {
           </p>
         </Section>
 
-        <Section id="fee" title="Protocol fee">
+        <Section id="fee" title="Fee structure">
           <p>
-            A flat 0.5% (<code className="font-mono">PROTOCOL_FEE_BPS = 50</code>)
-            is deducted from every charge and routed by the contract to an
-            immutable treasury address set at deploy time. The constant cannot
-            be modified, the recipient cannot be rotated, and there is no
-            admin role with the power to do either.
+            There is no protocol fee. The contract has no admin role and no
+            upgrade path, so no cut can ever be added retroactively. Each
+            charge splits two ways: the merchant cut and the keeper bounty
+            that the merchant themselves picked when creating the plan.
           </p>
           <p>
             A 10 USDC charge with a 50 bps keeper bounty splits as:
@@ -245,16 +244,11 @@ if (!await hasActiveSubscription(client, MANAGER, wallet, planId)) {
               <tbody>
                 <tr>
                   <td className="px-4 py-3 font-600">Merchant</td>
-                  <td className="px-4 py-3 text-muted-foreground">99.0%</td>
-                  <td className="px-4 py-3">9.90</td>
+                  <td className="px-4 py-3 text-muted-foreground">99.5%</td>
+                  <td className="px-4 py-3">9.95</td>
                 </tr>
                 <tr className="border-t border-rule">
                   <td className="px-4 py-3 font-600">Keeper</td>
-                  <td className="px-4 py-3 text-muted-foreground">0.5%</td>
-                  <td className="px-4 py-3">0.05</td>
-                </tr>
-                <tr className="border-t border-rule">
-                  <td className="px-4 py-3 font-600">Protocol fee</td>
                   <td className="px-4 py-3 text-muted-foreground">0.5%</td>
                   <td className="px-4 py-3">0.05</td>
                 </tr>
@@ -779,6 +773,37 @@ client.watchEvent({
             <div>
               <div className="flex items-baseline gap-3">
                 <span className="font-mono text-[12px] text-[color:var(--accent-ink)]">
+                  v0.3.0
+                </span>
+                <span className="text-[12px] text-muted-foreground">
+                  2026 May 22
+                </span>
+              </div>
+              <ul className="mt-2 list-disc pl-5 space-y-1 text-[14px]">
+                <li>
+                  Removed the protocol fee. Each charge now splits two ways:
+                  merchant cut and keeper bounty.
+                </li>
+                <li>
+                  Contract has no admin role and no fee recipient. No cut can
+                  ever be added.
+                </li>
+                <li>
+                  Redeployed manager to{" "}
+                  <code className="font-mono">
+                    {ARC_TESTNET.subscriptionManager}
+                  </code>
+                  . The previous deployment is abandoned.
+                </li>
+                <li>
+                  Vercel Cron keeper endpoint at /api/keeper, scheduled hourly.
+                </li>
+              </ul>
+            </div>
+
+            <div>
+              <div className="flex items-baseline gap-3">
+                <span className="font-mono text-[12px] text-[color:var(--accent-ink)]">
                   v0.2.0
                 </span>
                 <span className="text-[12px] text-muted-foreground">
@@ -787,19 +812,8 @@ client.watchEvent({
               </div>
               <ul className="mt-2 list-disc pl-5 space-y-1 text-[14px]">
                 <li>
-                  Added a flat 0.5% protocol fee, routed by the contract to an
-                  immutable treasury address.
-                </li>
-                <li>
-                  Charged event now carries the protocol fee amount in
-                  addition to the keeper bounty.
-                </li>
-                <li>
-                  Redeployed manager to{" "}
-                  <code className="font-mono">
-                    {ARC_TESTNET.subscriptionManager}
-                  </code>
-                  . The previous deployment is abandoned.
+                  Experimented with a 0.5% protocol fee. Rolled back in v0.3.0
+                  to keep the protocol take-rate at zero.
                 </li>
                 <li>
                   Docs reorganised around quick start, migration from Stripe,

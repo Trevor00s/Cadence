@@ -39,7 +39,6 @@ const ERC20_BALANCE_ABI = [
 interface LiveData {
   plans: bigint;
   subs: bigint;
-  feesCollected: bigint;
 }
 
 function LiveState() {
@@ -51,7 +50,7 @@ function LiveState() {
     let cancelled = false;
     (async () => {
       try {
-        const [plans, subs, feesCollected] = await Promise.all([
+        const [plans, subs] = await Promise.all([
           publicClient.readContract({
             address: ARC_TESTNET.subscriptionManager,
             abi: subscriptionManagerAbi,
@@ -62,14 +61,8 @@ function LiveState() {
             abi: subscriptionManagerAbi,
             functionName: "nextSubId",
           }) as Promise<bigint>,
-          publicClient.readContract({
-            address: ARC_TESTNET.usdc,
-            abi: ERC20_BALANCE_ABI,
-            functionName: "balanceOf",
-            args: [ARC_TESTNET.protocolFeeRecipient],
-          }) as Promise<bigint>,
         ]);
-        if (!cancelled) setData({ plans, subs, feesCollected });
+        if (!cancelled) setData({ plans, subs });
       } catch {
         if (!cancelled) setData(null);
       }
@@ -112,7 +105,7 @@ function MetricsBoard() {
     let cancelled = false;
     const load = async () => {
       try {
-        const [plans, subs, feesCollected] = await Promise.all([
+        const [plans, subs] = await Promise.all([
           publicClient.readContract({
             address: ARC_TESTNET.subscriptionManager,
             abi: subscriptionManagerAbi,
@@ -123,14 +116,8 @@ function MetricsBoard() {
             abi: subscriptionManagerAbi,
             functionName: "nextSubId",
           }) as Promise<bigint>,
-          publicClient.readContract({
-            address: ARC_TESTNET.usdc,
-            abi: ERC20_BALANCE_ABI,
-            functionName: "balanceOf",
-            args: [ARC_TESTNET.protocolFeeRecipient],
-          }) as Promise<bigint>,
         ]);
-        if (!cancelled) setData({ plans, subs, feesCollected });
+        if (!cancelled) setData({ plans, subs });
       } catch {
         if (!cancelled) setData(null);
       }
@@ -143,28 +130,11 @@ function MetricsBoard() {
     };
   }, [publicClient]);
 
-  const usdcFromBig = (v: bigint) => {
-    const n = Number(v) / 1_000_000;
-    return n < 1
-      ? n.toFixed(2)
-      : n.toLocaleString(undefined, { maximumFractionDigits: 2 });
-  };
-  // Total settled volume can be inferred from fees / 0.005 since fee is 50bps.
-  const totalSettled = data
-    ? usdcFromBig((data.feesCollected * 10_000n) / 50n)
-    : null;
-
   const metrics = [
     { k: "Plans created", v: data ? data.plans.toString() : "." },
     { k: "Subscriptions", v: data ? data.subs.toString() : "." },
-    {
-      k: "Total settled",
-      v: totalSettled ? totalSettled + " USDC" : ".",
-    },
-    {
-      k: "Protocol fees",
-      v: data ? usdcFromBig(data.feesCollected) + " USDC" : ".",
-    },
+    { k: "Protocol fee", v: "0%" },
+    { k: "Network", v: "Arc Testnet" },
   ];
 
   return (
@@ -356,12 +326,12 @@ function FlowDiagram() {
         <div>
           <Pill>Architecture</Pill>
           <h2 className="mt-4 text-[32px] leading-tight tracking-[-0.02em] font-700">
-            One signature. Four ledger entries.
+            One signature. Two ledger entries.
           </h2>
           <p className="mt-4 text-[14px] text-muted-foreground leading-relaxed">
-            Each charge is a single Permit2 transferFrom that splits into three
-            payments at the contract level. No off-chain routing, no batching
-            risk.
+            Each charge is a single Permit2 transferFrom that splits two ways
+            at the contract level: merchant cut plus keeper bounty. No
+            off-chain routing, no batching risk.
           </p>
         </div>
         <div className="border border-rule rounded-md bg-card p-6 md:p-10">
@@ -522,11 +492,11 @@ function FlowDiagram() {
             {/* Split point */}
             <circle cx="620" cy="170" r="3" fill="var(--accent-ink)" />
 
-            {/* Three split lines */}
+            {/* Two split lines */}
             <line
               x1="620"
               y1="170"
-              x2="160"
+              x2="240"
               y2="270"
               stroke="var(--accent-ink)"
               strokeWidth="1"
@@ -535,26 +505,17 @@ function FlowDiagram() {
             <line
               x1="620"
               y1="170"
-              x2="360"
-              y2="270"
-              stroke="var(--accent-ink)"
-              strokeWidth="1"
-              markerEnd="url(#arrowAccent)"
-            />
-            <line
-              x1="620"
-              y1="170"
-              x2="620"
+              x2="480"
               y2="270"
               stroke="var(--accent-ink)"
               strokeWidth="1"
               markerEnd="url(#arrowAccent)"
             />
 
-            {/* Bottom row: merchant, keeper, fee recipient */}
+            {/* Bottom row: merchant, keeper */}
             <g>
               <rect
-                x="80"
+                x="160"
                 y="270"
                 width="160"
                 height="60"
@@ -564,7 +525,7 @@ function FlowDiagram() {
                 strokeWidth="1"
               />
               <text
-                x="160"
+                x="240"
                 y="295"
                 textAnchor="middle"
                 fontSize="11"
@@ -574,19 +535,19 @@ function FlowDiagram() {
                 merchant
               </text>
               <text
-                x="160"
+                x="240"
                 y="313"
                 textAnchor="middle"
                 fontSize="10"
                 fill="var(--accent-ink)"
               >
-                99.0%
+                99.5%
               </text>
             </g>
 
             <g>
               <rect
-                x="280"
+                x="400"
                 y="270"
                 width="160"
                 height="60"
@@ -596,7 +557,7 @@ function FlowDiagram() {
                 strokeWidth="1"
               />
               <text
-                x="360"
+                x="480"
                 y="295"
                 textAnchor="middle"
                 fontSize="11"
@@ -606,39 +567,7 @@ function FlowDiagram() {
                 keeper bounty
               </text>
               <text
-                x="360"
-                y="313"
-                textAnchor="middle"
-                fontSize="10"
-                fill="var(--accent-ink)"
-              >
-                0.5%
-              </text>
-            </g>
-
-            <g>
-              <rect
-                x="540"
-                y="270"
-                width="160"
-                height="60"
-                rx="4"
-                fill="var(--background)"
-                stroke="currentColor"
-                strokeWidth="1"
-              />
-              <text
-                x="620"
-                y="295"
-                textAnchor="middle"
-                fontSize="11"
-                fontWeight="700"
-                fill="currentColor"
-              >
-                protocol fee
-              </text>
-              <text
-                x="620"
+                x="480"
                 y="313"
                 textAnchor="middle"
                 fontSize="10"
@@ -673,8 +602,8 @@ function BuiltOn() {
     },
     {
       k: "Foundry",
-      v: "23 tests",
-      d: "Property-style tests cover plan creation, subscribe, recurring charge, three-way split, cancellation, and edge cases.",
+      v: "19 tests",
+      d: "Property-style tests cover plan creation, subscribe, recurring charge, two-way split, cancellation, and edge cases.",
     },
   ];
   return (
@@ -966,7 +895,7 @@ function Landing() {
               [
                 "Fees",
                 "2.9% + $0.30 per charge",
-                "0.5% protocol fee. Onchain, transparent",
+                "Zero protocol fees. Pay gas only",
               ],
             ].map((row, i) => (
               <div
@@ -991,20 +920,20 @@ function Landing() {
           <div>
             <Pill>Cost</Pill>
             <h2 className="mt-4 text-[32px] leading-tight tracking-[-0.02em] font-700">
-              0.5% flat. Nothing else.
+              Zero protocol fees.
             </h2>
             <p className="mt-4 text-[14px] text-muted-foreground leading-relaxed">
-              Stripe takes 2.9% plus thirty cents per charge. Cadence takes
-              0.5%, paid in USDC, routed by the contract to an immutable
-              treasury address. Every fee is verifiable onchain.
+              Cadence does not take a cut. The only costs paid by anyone are
+              gas (in USDC, on Arc) and the keeper bounty that the merchant
+              themselves configures.
             </p>
           </div>
           <div className="grid sm:grid-cols-3 gap-4">
             {[
               {
                 k: "Protocol fee",
-                v: "0.5%",
-                d: "Of every charge. Routed by the contract to an immutable treasury. Set at deploy time, can never increase.",
+                v: "0%",
+                d: "There is no treasury. The contract has no admin and no upgrade path. No cut is ever taken.",
               },
               {
                 k: "Network gas",
@@ -1014,7 +943,7 @@ function Landing() {
               {
                 k: "Keeper bounty",
                 v: "0 to 10%",
-                d: "Set by the merchant per plan. 0.5% is a sensible default.",
+                d: "Set by the merchant per plan. 0.5% is a sensible default. Goes to whoever fires the renewal.",
               },
             ].map((c) => (
               <div
@@ -1094,11 +1023,10 @@ function Landing() {
               q="How does Cadence make money?"
               a={
                 <>
-                  A 0.5% protocol fee is taken from every charge and routed by
-                  the contract to an immutable treasury address. The fee rate
-                  is a constant, not storage: it cannot be raised after deploy.
-                  There is no per-transaction surcharge, no monthly minimum,
-                  no platform contract that can be upgraded to take more.
+                  It doesn't. There is no protocol fee, no treasury, and no
+                  admin address on the contract. The only payouts on each
+                  charge are the merchant cut and the keeper bounty that the
+                  merchant chose when creating the plan.
                 </>
               }
             />
