@@ -30,6 +30,8 @@ import {
   sigDeadlineDefault,
 } from "@/lib/cadence/permit2";
 import { ClientOnly } from "@/components/cadence/Providers";
+import { humanizeError } from "@/lib/cadence/errors";
+import { PlanCardSkeleton } from "@/components/cadence/Skeleton";
 
 type SubscribeSearch = { plan?: number };
 
@@ -168,7 +170,15 @@ function PlanBrowser() {
 
   if (plans === null) {
     return (
-      <div className="text-[14px] text-muted-foreground">Loading plans…</div>
+      <div>
+        <div className="text-[11px] uppercase tracking-[0.08em] text-muted-foreground font-600 mb-3">
+          Available plans
+        </div>
+        <div className="grid sm:grid-cols-2 gap-3">
+          <PlanCardSkeleton />
+          <PlanCardSkeleton />
+        </div>
+      </div>
     );
   }
   if (plans.length === 0) {
@@ -407,9 +417,9 @@ function SubscribeFlow({ planId }: { planId: bigint }) {
       })) as bigint;
       setNewSubId(next - 1n);
       setStep("done");
-    } catch (e: any) {
+    } catch (e) {
       console.error(e);
-      setError(e?.shortMessage || e?.message || "Failed");
+      setError(humanizeError(e));
       setStep("idle");
     }
   }

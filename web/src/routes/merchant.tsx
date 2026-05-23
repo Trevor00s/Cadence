@@ -24,6 +24,7 @@ import {
   shortAddr,
 } from "@/lib/cadence/permit2";
 import { ClientOnly } from "@/components/cadence/Providers";
+import { humanizeError } from "@/lib/cadence/errors";
 
 export const Route = createFileRoute("/merchant")({
   head: () => ({
@@ -51,28 +52,6 @@ const PERIODS: { label: string; seconds: number }[] = [
   { label: "Yearly (365d)", seconds: 365 * 86400 },
 ];
 
-function humanizeError(err: unknown): string {
-  const raw =
-    (err as { shortMessage?: string })?.shortMessage ||
-    (err instanceof Error ? err.message : String(err));
-  const s = raw.toLowerCase();
-  if (s.includes("user rejected") || s.includes("user denied"))
-    return "Signature rejected in wallet.";
-  if (s.includes("insufficient funds"))
-    return "Wallet does not have enough USDC for gas. Top up via the faucet.";
-  if (s.includes("insufficient allowance"))
-    return "Permit2 allowance is exhausted. Subscribe again to refresh it.";
-  if (s.includes("notdue")) return "This subscription is not due yet.";
-  if (s.includes("alreadycancelled"))
-    return "This subscription is already cancelled.";
-  if (s.includes("planinactive"))
-    return "This plan has been deactivated by the merchant.";
-  if (s.includes("invalidamount"))
-    return "Amount must be greater than zero.";
-  if (s.includes("periodtoshort") || s.includes("period too short"))
-    return "Period must be at least 1 hour.";
-  return raw.split("\n")[0];
-}
 
 function MerchantPage() {
   const { address, isConnected } = useAccount();

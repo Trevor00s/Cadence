@@ -15,6 +15,8 @@ import {
   relativeTime,
 } from "@/lib/cadence/permit2";
 import { ClientOnly } from "@/components/cadence/Providers";
+import { humanizeError } from "@/lib/cadence/errors";
+import { SubscriptionRowSkeleton } from "@/components/cadence/Skeleton";
 
 export const Route = createFileRoute("/subscriptions")({
   head: () => ({
@@ -119,9 +121,11 @@ function SubscriptionsPage() {
 
   const { writeContractAsync, isPending } = useWriteContract();
   const [cancelingId, setCancelingId] = useState<bigint | null>(null);
+  const [cancelError, setCancelError] = useState<string | null>(null);
 
   async function handleCancel(id: bigint) {
     setCancelingId(id);
+    setCancelError(null);
     try {
       const hash = await writeContractAsync({
         address: ARC_TESTNET.subscriptionManager,
@@ -133,6 +137,7 @@ function SubscriptionsPage() {
       setVersion((v) => v + 1);
     } catch (e) {
       console.error(e);
+      setCancelError(humanizeError(e));
     } finally {
       setCancelingId(null);
     }
@@ -158,8 +163,9 @@ function SubscriptionsPage() {
           <ConnectButton />
         </div>
       ) : loading ? (
-        <div className="mt-8 text-[14px] text-muted-foreground inline-flex items-center gap-2">
-          <Loader2 className="h-4 w-4 animate-spin" /> Reading chain…
+        <div className="mt-8 space-y-3">
+          <SubscriptionRowSkeleton />
+          <SubscriptionRowSkeleton />
         </div>
       ) : subs.length === 0 ? (
         <div className="mt-8 border border-dashed border-rule rounded-md p-8 text-[14px] text-muted-foreground">
@@ -250,6 +256,11 @@ function SubscriptionsPage() {
               </div>
             );
           })}
+        </div>
+      )}
+      {cancelError && (
+        <div className="mt-4 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-[13px] text-destructive">
+          {cancelError}
         </div>
       )}
     </div>
