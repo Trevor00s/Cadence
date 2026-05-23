@@ -61,6 +61,7 @@ function MerchantPage() {
   const [bounty, setBounty] = useState(50);
   const [copied, setCopied] = useState(false);
   const [createdPlanId, setCreatedPlanId] = useState<bigint | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const publicClient = usePublicClient();
   const { writeContractAsync, isPending, data: txHash, reset } = useWriteContract();
@@ -98,7 +99,11 @@ function MerchantPage() {
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
-    if (!isConnected) return;
+    setSubmitError(null);
+    if (!isConnected) {
+      setSubmitError("Connect a wallet first.");
+      return;
+    }
     if (wrongChain) {
       switchChain({ chainId: arcTestnet.id });
       return;
@@ -114,6 +119,12 @@ function MerchantPage() {
       });
     } catch (err) {
       console.error(err);
+      const msg = err instanceof Error ? err.message : String(err);
+      // viem prepends a long message header; the shortMessage is more useful.
+      const shortMsg =
+        (err as { shortMessage?: string })?.shortMessage ||
+        msg.split("\n")[0];
+      setSubmitError(shortMsg);
     }
   }
 
@@ -228,6 +239,12 @@ function MerchantPage() {
                   ? "Creating plan…"
                   : "Create plan"}
             </button>
+
+            {submitError && (
+              <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-[13px] text-destructive">
+                {submitError}
+              </div>
+            )}
 
             {createdPlanId !== null && txHash && (
               <div className="mt-2 border-t border-rule pt-6 space-y-3">
