@@ -22,7 +22,7 @@ import {
   subscriptionManagerAbi,
 } from "../src/lib/cadence/chain";
 
-export const config = { runtime: "nodejs20.x", maxDuration: 60 };
+export const config = { runtime: "nodejs", maxDuration: 60 };
 
 const MAX_SUBS_PER_TICK = 50;
 const MAX_RETRIES_PER_SUB = 1;
