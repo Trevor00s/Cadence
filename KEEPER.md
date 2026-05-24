@@ -2,9 +2,9 @@
 
 The Cadence Drip keeper is the actor that calls `charge(subId)` on due subscriptions, collects the keeper bounty, and keeps the protocol moving. Anyone can run one. This repo ships two ways to host it.
 
-## Option A: Vercel Cron (recommended for testnet)
+## Option A: Vercel function + external cron (free)
 
-The frontend already deploys to Vercel. We piggy back on it.
+The endpoint `/api/keeper` lives in `web/api/keeper.ts` and is deployed alongside the frontend on Vercel. Vercel Hobby tier only allows a daily schedule, so the cron lives outside Vercel.
 
 1. Generate a fresh wallet for the keeper (do not reuse the deployer).
 
@@ -12,16 +12,20 @@ The frontend already deploys to Vercel. We piggy back on it.
    cast wallet new
    ```
 
-   Note the address and the private key.
-
 2. Send the new wallet a small amount of USDC (a few dollars is enough; the bounty replenishes it).
 
 3. In the Vercel project's Settings > Environment Variables, add:
 
    - `KEEPER_KEY` = the 0x prefixed private key from step 1
-   - Optional: `CRON_SECRET` = any long random string, used by Vercel to authenticate cron invocations
+   - `CRON_SECRET` = any long random string
 
-4. Redeploy. The cron defined in `web/vercel.json` will hit `/api/keeper` every hour and charge any due subscriptions.
+4. Redeploy. The endpoint is now live at `https://your-domain/api/keeper`.
+
+5. Wire an external cron to hit it. Free options:
+
+   - **cron-job.org** (free, web UI, schedules down to 1 minute): create job, URL = your endpoint, Header `Authorization: Bearer <CRON_SECRET>`.
+   - **GitHub Actions** (free for public repos): add a workflow with `schedule: cron('*/5 * * * *')` that curls the endpoint.
+   - **Upstash Schedules** (free tier).
 
 To trigger manually for testing:
 
@@ -29,7 +33,7 @@ To trigger manually for testing:
 curl -H "Authorization: Bearer $CRON_SECRET" https://your-domain.vercel.app/api/keeper
 ```
 
-Hourly is the minimum cron frequency on Vercel's free tier and lines up with the contract's `MIN_PERIOD = 1 hour`. If you need sub hourly cadence, use Option B.
+If you upgrade Vercel to Pro ($20/mo), re-add the `crons` block to `web/vercel.json` and remove the external cron.
 
 ## Option B: long running Node process
 

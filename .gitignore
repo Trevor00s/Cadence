@@ -32,3 +32,4 @@ pnpm-debug.log*
 # Local agent config (private)
 CLAUDE.md
 .claude/
+.vercel
